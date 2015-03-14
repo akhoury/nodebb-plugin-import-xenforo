@@ -1,0 +1,43 @@
+{
+    "name": "nodebb-plugin-import-xenforo",
+    "version": "0.0.1",
+    "description": "A xenforo to NodeBB data exporter",
+    "main": "./index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/akhoury/nodebb-plugin-import-xenforo"
+    },
+    "keywords": [
+        "nodebb",
+        "xf",
+        "xenforo",
+        "plugin",
+        "migrate",
+        "convert",
+        "export",
+        "import"
+    ],
+    "authors": [
+        {
+            "name": "akhoury",
+            "email": "bentael@gmail.com"
+        }
+    ],
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/akhoury/nodebb-plugin-import-xenforo/issues"
+    },
+    "nbbpm": {
+        "index": false
+    },
+    "dependencies": {
+        "underscore": "~1.6.0",
+        "fs-extra": "~0.11.0",
+        "async": "~0.9.0",
+        "marked": "~0.3.2",
+        "mysql": "~2.4.2"
+    }
+}

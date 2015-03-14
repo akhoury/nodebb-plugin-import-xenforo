@@ -1,0 +1,12 @@
+{
+  "id": "nodebb-plugin-import-xenforo",
+  "name": "nodebb-plugin-import-xenforo",
+  "description": "A Xenforo to NodeBB data exporter",
+  "url": "https://github.com/akhoury/nodebb-plugin-import-xenforo",
+  "library": "./admin/index.js",
+  "hooks": [
+	{ "hook": "filter:admin.header.build", "method": "admin.menu"},
+	{ "hook": "static:app.load", "method": "admin.load"}
+  ],
+  "templates": "./public/templates"
+}
