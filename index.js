@@ -44,7 +44,7 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
             Exporter.error(err.error);
             return callback(err);
         }
-        // console.log('\n\n====QUERY====\n\n' + query + '\n');
+        console.log('\n\n====QUERY====\n\n' + query + '\n');
         Exporter.connection.query(query, function(err, rows) {
             //if (rows) {
             //    console.log('returned: ' + rows.length + ' results');
@@ -90,7 +90,7 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
 
             + prefix + 'user_profile.signature as _signature, '
             + prefix + 'user_profile.homepage as _website, '
-            + prefix + 'user_profile._location as _location, '
+            + prefix + 'user_profile.location as _location, '
 
             + prefix + 'user.register_date as _joindate, '
             + prefix + 'user.last_activity as _lastonline, '
@@ -100,7 +100,7 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
 
             + prefix + 'user_profile.dob_day as _xf_dob_day, '
             + prefix + 'user_profile.dob_month as _xf_dob_month, '
-            + prefix + 'user_profile.dob_year as _xf_dob_year, '
+            + prefix + 'user_profile.dob_year as _xf_dob_year '
 
             + 'FROM ' + prefix + 'user '
             + 'LEFT JOIN ' + prefix + 'user_profile ON ' + prefix + 'user_profile.user_id=' + prefix + 'user.user_id '
@@ -395,7 +395,8 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
                         if (row._xf_state === "deleted") {
                             row._deleted = 1;
                         }
-                        if (topicsMap[row._tid]._pid != row._pid) {
+			var t = topicsMap[row._tid];
+                        if (t && t._pid != row._pid) {
                             map[row._pid] = row;
                         }
                     });
