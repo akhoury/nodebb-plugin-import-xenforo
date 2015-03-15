@@ -349,9 +349,10 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
                 }
                 var map = {};
                 rows.forEach(function(row) {
-                    row._sourceFullpath = path.join(attachmentsSourceDirFullPath, "/" + Math.floor(row._xf_data_id / 1000), "/" + row._xf_data_id + "-" + row._filehash + ".data");
+                    var d = Math.floor(row._xf_data_id / 1000);
+                    row._sourceFullpath = path.join(attachmentsSourceDirFullPath, "/" + d, "/" + row._xf_data_id + "-" + row._filehash + ".data");
                     row._targetFullpath = path.join(attachmentsTargetDirFullPath, "/" + row._xf_data_id, "/" + row._fname);
-                    row._targetBaseUrl = path.join(attachmentsTargetDirBaseUrl, "/" + row._xf_data_id, "/" + row._fname);
+                    row._targetBaseUrl = path.join(attachmentsTargetDirBaseUrl, "/" + d, "/" + row._xf_data_id + "_" + row._fname);
 
                     if (!map[row._pid]) {
                         map[row._pid] = [];
