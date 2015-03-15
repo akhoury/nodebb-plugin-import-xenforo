@@ -352,7 +352,7 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
                     var d = Math.floor(row._xf_data_id / 1000);
                     row._sourceFullpath = path.join(attachmentsSourceDirFullPath, "/" + d, "/" + row._xf_data_id + "-" + row._filehash + ".data");
                     row._targetFullpath = path.join(attachmentsTargetDirFullPath, "/" + d, "/" + row._xf_data_id + "_" + row._fname);
-                    row._targetBaseUrl = path.join(attachmentsTargetDirBaseUrl, "/" + d, "/" + row._xf_data_id + "_" + row._fname);
+                    row._targetUrl = path.join(attachmentsTargetDirBaseUrl, "/" + d, "/" + row._xf_data_id + "_" + row._fname);
 
                     if (!map[row._pid]) {
                         map[row._pid] = [];
@@ -379,7 +379,9 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
                     if (err) {
 
                     }
-                    content +=  '[' + attachment._fname + '](' + attachment._targetBaseUrl + ')\n';
+                    // that last ?: is to trick the bbcodejs converter that this is a valid url, 
+                    // and dont prepend http:// to it
+                    content += '[url="' + attachment._targetUrl + '?:"]' + attachment._fname + '[/url]';
                     next();
                 });
             },
