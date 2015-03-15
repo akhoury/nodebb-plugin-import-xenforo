@@ -1,4 +1,4 @@
-
+var path = require('path');
 var fs = require('fs-extra');
 var async = require('async');
 var mysql = require('mysql');
@@ -85,6 +85,7 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
         var query = 'SELECT '
             + prefix + 'user.user_id as _uid, '
             + prefix + 'user.email as _email, '
+            + prefix + 'user.username as _username, '
 
             + prefix + 'user.is_banned as _banned, '
             + prefix + 'user.like_count as _reputation, '
@@ -323,7 +324,7 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
         }
 
         if (!attachmentsSourceDirFullPath) {
-            console.log("attachmentsSourceDirFullPath not set. Attachments will be skipped");
+            Exporter.warn("attachmentsSourceDirFullPath not set. Attachments will be skipped");
             return callback(null, {});
         }
 
@@ -332,8 +333,8 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
         var query = 'SELECT '
             + prefix + 'attachment_data.data_id as _xf_data_id, '
             + prefix + 'attachment_data.user_id as _uid, '
-            + prefix + 'attachment_data.filename as _filename, '
-            + prefix + 'attachment_data.file_hash as _filehash '
+            + prefix + 'attachment_data.filename as _fname, '
+            + prefix + 'attachment_data.file_hash as _filehash, '
             + prefix + 'attachment.content_id as _pid '
 
             + 'FROM ' + prefix + 'attachment_data '
@@ -348,16 +349,16 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
                 }
                 var map = {};
                 rows.forEach(function(row) {
-                    row._sourceFullpath = path.join(attachmentsSourceDirFullPath, "/" + Math.floor(row._xf_data_id / 1000), "/" + row._xf_data_id + "-" + row._filehash);
-                    row._targetFullpath = path.join(attachmentsTargetDirFullPath, "/" + row._xf_data_id, "/" + row._filename);
-                    row._targetBaseUrl = path.join(attachmentsTargetDirBaseUrl, "/" + row._xf_data_id, "/" + row._filename);
+                    row._sourceFullpath = path.join(attachmentsSourceDirFullPath, "/" + Math.floor(row._xf_data_id / 1000), "/" + row._xf_data_id + "-" + row._filehash + ".data");
+                    row._targetFullpath = path.join(attachmentsTargetDirFullPath, "/" + row._xf_data_id, "/" + row._fname);
+                    row._targetBaseUrl = path.join(attachmentsTargetDirBaseUrl, "/" + row._xf_data_id, "/" + row._fname);
 
                     if (!map[row._pid]) {
                         map[row._pid] = [];
                     }
                     map[row._pid].push(row);
                 });
-                Exporter._conversationsMap = map;
+                Exporter._attachmentsMap = map;
                 callback(null, map);
             });
     };
@@ -379,8 +380,8 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
         attachments.forEach(function(attachment) {
             try {
                 fs.copySync(attachment._sourceFullpath, attachment._targetFullpath);
-                content +=  '[' + attachment._filename + '](' + + attachment._targetBaseUrl + ')\n';
-                console.log("copied", attachment._sourceFullpath, attachment._targetFullpath, '[' + attachment._filename + '](' + + attachment._targetBaseUrl + ')');
+                content +=  '[' + attachment._fname + '](' + attachment._targetBaseUrl + ')\n';
+                console.log("copied", attachment._sourceFullpath, attachment._targetFullpath, '[' + attachment._fname + '](' + attachment._targetBaseUrl + ')');
             } catch (e){
                 Exporter.warn('could not copy "' + attachment._sourceFullpath + '" to: ' + attachment._targetFullpath, e);
             }
