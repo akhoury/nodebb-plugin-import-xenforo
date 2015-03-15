@@ -1,4 +1,5 @@
 
+var fs = require('fs-extra');
 var async = require('async');
 var mysql = require('mysql');
 var _ = require('underscore');
@@ -290,6 +291,104 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
             });
     };
 
+    var findNodeBBRootPath = function(dir) {
+        if (dir === "/") return "";
+
+        if (!dir) {
+            dir = __dirname;
+        }
+
+        var pkgFile = path.join(dir, '/package.json');
+
+        if (fs.existsSync(pkgFile) && fs.readJsonSync(pkgFile).name === "nodebb") {
+            return dir;
+        } else {
+            var parts = dir.split("/");
+            parts.pop();
+            return findNodeBBRootPath(parts.join("/"));
+        }
+    };
+
+    var getAttachmentsMap = function(callback) {
+        callback = !_.isFunction(callback) ? noop : callback;
+
+        var custom = Exporter.config('custom');
+
+        var attachmentsSourceDirFullPath = custom.attachmentsSourceDirFullPath;
+        var attachmentsTargetDirFullPath = custom.attachmentsTargetDirFullPath || path.join(findNodeBBRootPath(), "/public/_imported_xf_attachments/");
+        var attachmentsTargetDirBaseUrl = custom.attachmentsTargetDirBaseUrl || "/_imported_xf_attachments/";
+
+        if (Exporter._attachmentsMap) {
+            return callback(null, Exporter._attachmentsMap);
+        }
+
+        if (!attachmentsSourceDirFullPath) {
+            console.log("attachmentsSourceDirFullPath not set. Attachments will be skipped");
+            return callback(null, {});
+        }
+
+        var prefix = Exporter.config('prefix');
+
+        var query = 'SELECT '
+            + prefix + 'attachment_data.data_id as _xf_data_id, '
+            + prefix + 'attachment_data.user_id as _uid, '
+            + prefix + 'attachment_data.filename as _filename, '
+            + prefix + 'attachment_data.file_hash as _filehash '
+            + prefix + 'attachment.content_id as _pid '
+
+            + 'FROM ' + prefix + 'attachment_data '
+            + 'JOIN ' + prefix + 'attachment ON ' + prefix + 'attachment_data.data_id = ' + prefix + 'attachment.data_id '
+            + 'WHERE ' + prefix + 'attachment.content_type = "post" ';
+
+        Exporter.query(query,
+            function(err, rows) {
+                if (err) {
+                    Exporter.error(err);
+                    return callback(err);
+                }
+                var map = {};
+                rows.forEach(function(row) {
+                    row._sourceFullpath = path.join(attachmentsSourceDirFullPath, "/" + Math.floor(row._xf_data_id / 1000), "/" + row._xf_data_id + "-" + row._filehash);
+                    row._targetFullpath = path.join(attachmentsTargetDirFullPath, "/" + row._xf_data_id, "/" + row._filename);
+                    row._targetBaseUrl = path.join(attachmentsTargetDirBaseUrl, "/" + row._xf_data_id, "/" + row._filename);
+
+                    if (!map[row._pid]) {
+                        map[row._pid] = [];
+                    }
+                    map[row._pid].push(row);
+                });
+                Exporter._conversationsMap = map;
+                callback(null, map);
+            });
+    };
+
+    var augmentPostWithAttachment = function(hash, attachmentsMap) {
+        if (!hash._xf_attachcount) {
+            return hash;
+        }
+
+        var content = hash._content;
+        var pid = hash._pid;
+
+        var attachments = attachmentsMap[pid];
+        if (!attachments) {
+            return hash;
+        }
+
+        content += '\n\n';
+        attachments.forEach(function(attachment) {
+            try {
+                fs.copySync(attachment._sourceFullpath, attachment._targetFullpath);
+                content +=  '[' + attachment._filename + '](' + + attachment._targetBaseUrl + ')\n';
+                console.log("copied", attachment._sourceFullpath, attachment._targetFullpath, '[' + attachment._filename + '](' + + attachment._targetBaseUrl + ')');
+            } catch (e){
+                Exporter.warn('could not copy "' + attachment._sourceFullpath + '" to: ' + attachment._targetFullpath, e);
+            }
+        });
+        hash._content = content;
+        return hash;
+    };
+
     Exporter.countTopics = function(callback) {
         callback = !_.isFunction(callback) ? noop : callback;
         var prefix = Exporter.config('prefix');
@@ -332,30 +431,34 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
             + prefix + 'thread.view_count as _viewcount, '
             + prefix + 'thread.discussion_open as _open, '
             + prefix + 'post.post_id as _pid, '
+            + prefix + 'post.attach_count as _xf_attachcount, '
             + prefix + 'post.message as _content '
             + 'FROM ' + prefix + 'thread '
             + 'JOIN ' + prefix + 'post ON ' + prefix + 'thread.first_post_id=' + prefix + 'post.post_id '
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
-        Exporter.query(query,
-            function(err, rows) {
-                if (err) {
-                    Exporter.error(err);
-                    return callback(err);
-                }
+        getAttachmentsMap(function(err, attachmentsMap) {
+            Exporter.query(query,
+                function(err, rows) {
+                    if (err) {
+                        Exporter.error(err);
+                        return callback(err);
+                    }
 
-                //normalize here
-                var map = {};
-                rows.forEach(function(row) {
-                    row._title = row._title ? row._title[0].toUpperCase() + row._title.substr(1) : 'Untitled';
-                    row._timestamp = ((row._timestamp || 0) * 1000) || startms;
-                    row._locked = row._open ? 0 : 1;
+                    //normalize here
+                    var map = {};
+                    rows.forEach(function(row) {
+                        row._title = row._title ? row._title[0].toUpperCase() + row._title.substr(1) : 'Untitled';
+                        row._timestamp = ((row._timestamp || 0) * 1000) || startms;
+                        row._locked = row._open ? 0 : 1;
 
-                    map[row._tid] = row;
+                        row = augmentPostWithAttachment(row, attachmentsMap);
+                        map[row._tid] = row;
+                    });
+
+                    callback(null, map);
                 });
-
-                callback(null, map);
-            });
+        });
     };
 
     Exporter.getPosts = function(callback) {
@@ -374,35 +477,41 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
             + prefix + 'post.username as _guest, '
             + prefix + 'post.message as _content, '
             + prefix + 'post.message_state as _xf_state, '
+            + prefix + 'post.attach_count as _xf_attachcount, '
             + prefix + 'post.post_date as _timestamp '
             + 'FROM ' + prefix + 'post '
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
-        Exporter.getTopics(function(err, topicsMap) {
-            Exporter.query(query,
-                function(err, rows) {
-                    if (err) {
-                        Exporter.error(err);
-                        return callback(err);
-                    }
-
-                    //normalize here
-                    var map = {};
-                    rows.forEach(function(row) {
-                        row._content = row._content || '';
-                        row._timestamp = ((row._timestamp || 0) * 1000) || startms;
-
-                        if (row._xf_state === "deleted") {
-                            row._deleted = 1;
+        getAttachmentsMap(function(err, attachmentsMap) {
+            Exporter.getTopics(function (err, topicsMap) {
+                Exporter.query(query,
+                    function (err, rows) {
+                        if (err) {
+                            Exporter.error(err);
+                            return callback(err);
                         }
-			var t = topicsMap[row._tid];
-                        if (t && t._pid != row._pid) {
-                            map[row._pid] = row;
-                        }
+
+                        //normalize here
+                        var map = {};
+                        rows.forEach(function (row) {
+                            row._content = row._content || '';
+                            row._timestamp = ((row._timestamp || 0) * 1000) || startms;
+
+                            if (row._xf_state === "deleted") {
+                                row._deleted = 1;
+                            }
+
+                            row = augmentPostWithAttachment(row, attachmentsMap);
+
+                            var t = topicsMap[row._tid];
+                            if (t && t._pid != row._pid) {
+                                map[row._pid] = row;
+                            }
+                        });
+
+                        callback(null, map);
                     });
-
-                    callback(null, map);
-                });
+            });
         });
     };
 

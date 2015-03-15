@@ -7,7 +7,12 @@ require('./index').testrun({
     dbuser: 'user',
     dbpass: 'password',
 
-    tablePrefix: 'xf_'
+    tablePrefix: 'xf_',
+    custom: {
+        "attachmentsSourceDirFullPath": "",  // required to get the attachemtns
+        "attachmentsTargetDirFullPath": "", // optional, defaults to /your/nodebb/path/public/_imported_xf_attachments/
+        "attachmentsTargetDirBaseUrl": ""  // optional, defalts to /_imported_xf_attachments/
+    }
 }, function(err, results) {
     fs.writeFileSync('./tmp.json', JSON.stringify(results, undefined, 2));
 });
