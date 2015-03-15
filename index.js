@@ -8,7 +8,7 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
 
 (function(Exporter) {
 
-    Exporter.setup = function(cocopnfig, callback) {
+    Exporter.setup = function(config, callback) {
         Exporter.log('setup');
 
         // mysql db only config
