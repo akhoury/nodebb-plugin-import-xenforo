@@ -8,7 +8,7 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
 
 (function(Exporter) {
 
-    Exporter.setup = function(config, callback) {
+    Exporter.setup = function(cocopnfig, callback) {
         Exporter.log('setup');
 
         // mysql db only config
@@ -380,7 +380,6 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
 
                     }
                     content +=  '[' + attachment._fname + '](' + attachment._targetBaseUrl + ')\n';
-                    console.log("copied", attachment._sourceFullpath, attachment._targetFullpath, '[' + attachment._fname + '](' + attachment._targetBaseUrl + ')');
                     next();
                 });
             },
