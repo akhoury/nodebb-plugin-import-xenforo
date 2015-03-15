@@ -539,7 +539,7 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
                                 var t = topicsMap[row._tid];
                                 if (t && t._pid != row._pid) {
                                     copyPostAttachments(row, attachmentsMap[row._pid], function(err, row) {
-                                        map[row._tid] = row;
+                                        map[row._pid] = row;
                                         next();
                                     });
                                 } else {
