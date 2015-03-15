@@ -351,7 +351,7 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
                 rows.forEach(function(row) {
                     var d = Math.floor(row._xf_data_id / 1000);
                     row._sourceFullpath = path.join(attachmentsSourceDirFullPath, "/" + d, "/" + row._xf_data_id + "-" + row._filehash + ".data");
-                    row._targetFullpath = path.join(attachmentsTargetDirFullPath, "/" + row._xf_data_id, "/" + row._fname);
+                    row._targetFullpath = path.join(attachmentsTargetDirFullPath, "/" + d, "/" + row._xf_data_id + "_" + row._fname);
                     row._targetBaseUrl = path.join(attachmentsTargetDirBaseUrl, "/" + d, "/" + row._xf_data_id + "_" + row._fname);
 
                     if (!map[row._pid]) {
