@@ -427,6 +427,7 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
             + prefix + 'thread.user_id as _uid, '
             + prefix + 'thread.node_id as _cid, '
             + prefix + 'thread.title as _title, '
+            + prefix + 'thread.sticky as _pinned, '
             + prefix + 'thread.username as _guest, '
             + prefix + 'thread.post_date as _timestamp, '
             + prefix + 'thread.view_count as _viewcount, '
