@@ -1,6 +1,6 @@
 {
     "name": "nodebb-plugin-import-xenforo",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "description": "A xenforo to NodeBB data exporter",
     "main": "./index.js",
     "scripts": {
