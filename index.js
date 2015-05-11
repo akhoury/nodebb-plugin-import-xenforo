@@ -366,7 +366,9 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
 
     var copyPostAttachments = function(row, mappedAttachments, callback) {
         if (!row._xf_attachcount || !mappedAttachments || !mappedAttachments.length) {
-            return callback(null, row);
+            return setImmediate(function() {
+                callback(null, row);   
+            });
         }
 
         var content = row._content;
