@@ -51,7 +51,7 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
         console.log('\n\n====QUERY====\n\n' + query + '\n');
         Exporter.connection.query(query, function(err, rows) {
             //if (rows) {
-            //    console.log('returned: ' + rows.length + ' results');
+                console.log('returned: ' + rows.length + ' results');
             //}
             callback(err, rows)
         });
@@ -143,7 +143,6 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
                         row._birthday = "" + row._xf_dob_month + "/" + row._xf_dob_day + "/" + row._xf_dob_year;
                     }
 
-					console.log(row._picture);
                     map[row._uid] = row;
                 });
 
