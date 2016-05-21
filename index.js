@@ -1,6 +1,7 @@
 var path = require('path');
 var fs = require('fs-extra');
 var async = require('async');
+var extend = require('extend');
 var mysql = require('mysql');
 var _ = require('underscore');
 var noop = function(){};
@@ -31,7 +32,9 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
             } catch (e) {}
         }
 
-        Exporter.config('custom', config.custom || {});
+        Exporter.config('custom', extend(true, {
+			avatarsTargetPathPrefix: '/uploads/xenforo/data/avatars/m',
+		}, config.custom || {}));
 
         Exporter.connection = mysql.createConnection(_config);
         Exporter.connection.connect();
@@ -132,18 +135,26 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
                     row._email = (row._email || '').toLowerCase();
                     row._website = Exporter.validateUrl(row._website);
 
+					row._picture = getPictureUrl(row._uid);
+
                     row._level = row._xf_is_admin ? "administrator" : row._xf_is_moderator ? "moderator" : "";
 
                     if (row._xf_dob_day && row._xf_dob_month && row._xf_dob_year) {
                         row._birthday = "" + row._xf_dob_month + "/" + row._xf_dob_day + "/" + row._xf_dob_year;
                     }
 
+					console.log(row._picture);
                     map[row._uid] = row;
                 });
 
                 callback(null, map);
             });
     };
+
+	var getPictureUrl = function (_uid) {
+		_uid = parseInt(_uid, 10);
+		return (Exporter.config('custom').avatarsTargetPathPrefix || "").replace(/\/$/, "") + "/" + ((_uid - (_uid % 1000) ) / 1000) + "/" + _uid + ".jpg";
+	};
 
     var getConversations = function(callback) {
         callback = !_.isFunction(callback) ? noop : callback;
@@ -367,7 +378,7 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
     var copyPostAttachments = function(row, mappedAttachments, callback) {
         if (!row._xf_attachcount || !mappedAttachments || !mappedAttachments.length) {
             return setImmediate(function() {
-                callback(null, row);   
+                callback(null, row);
             });
         }
 
@@ -381,7 +392,7 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
                     if (err) {
 
                     }
-                    // that last ?: is to trick the bbcodejs converter that this is a valid url, 
+                    // that last ?: is to trick the bbcodejs converter that this is a valid url,
                     // and dont prepend http:// to it
                     content += '[url="' + attachment._targetUrl + '?:"]' + attachment._fname + '[/url]';
                     next();
