@@ -320,31 +320,13 @@ var logPrefix = '[nodebb-plugin-import-xenforo]';
 				});
 	};
 
-	var findNodeBBRootPath = function(dir) {
-		if (dir === "/") return "";
-
-		if (!dir) {
-			dir = __dirname;
-		}
-
-		var pkgFile = path.join(dir, '/package.json');
-
-		if (fs.existsSync(pkgFile) && fs.readJsonSync(pkgFile).name === "nodebb") {
-			return dir;
-		} else {
-			var parts = dir.split("/");
-			parts.pop();
-			return findNodeBBRootPath(parts.join("/"));
-		}
-	};
-
 	var getAttachmentsMap = function(callback) {
 		callback = !_.isFunction(callback) ? noop : callback;
 
 		var custom = Exporter.config('custom');
 
 		var attachmentsSourceDirFullPath = custom.attachmentsSourceDirFullPath;
-		var attachmentsTargetDirFullPath = custom.attachmentsTargetDirFullPath || path.join(findNodeBBRootPath(), "/public/_imported_xf_attachments/");
+		var attachmentsTargetDirFullPath = custom.attachmentsTargetDirFullPath || path.join(nodebbRequire.fullpath, "/public/_imported_xf_attachments/");
 		var attachmentsTargetDirBaseUrl = custom.attachmentsTargetDirBaseUrl || "/_imported_xf_attachments/";
 
 		if (Exporter._attachmentsMap) {
